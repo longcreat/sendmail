@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sendmail-mcp"
+version = "0.1.0"
+description = "A secure email MCP server built with FastMCP"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Codex" }]
+keywords = ["mcp", "fastmcp", "email", "smtp"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Framework :: AsyncIO",
+  "Topic :: Communications :: Email",
+  "Intended Audience :: Developers",
+]
+dependencies = [
+  "fastmcp==3.0.2",
+  "aiosmtplib>=5.1.0,<6.0.0",
+  "SQLAlchemy>=2.0.0,<3.0.0",
+  "APScheduler>=3.11.0,<4.0.0",
+  "tenacity>=9.0.0,<10.0.0",
+  "jinja2>=3.1.0,<4.0.0",
+  "pydantic>=2.12.0,<3.0.0",
+  "pydantic-settings>=2.8.0,<3.0.0",
+  "python-dotenv>=1.1.0,<2.0.0",
+  "email-validator>=2.3.0,<3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0,<9.0.0",
+  "pytest-asyncio>=1.3.0,<2.0.0",
+]
+
+[project.scripts]
+sendmail-mcp = "sendmail_mcp.cli:main"
+sendmail-mcp-stdio = "sendmail_mcp.cli:main_stdio"
+sendmail-mcp-http = "sendmail_mcp.cli:main_http"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
