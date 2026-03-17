@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sendmail-mcp"
-version = "0.1.0"
-description = "A secure email MCP server built with FastMCP"
+version = "0.2.0"
+description = "An Outlook-compatible mail MCP server built with FastMCP"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Codex" }]
@@ -22,10 +22,6 @@ classifiers = [
 dependencies = [
   "fastmcp==3.0.2",
   "aiosmtplib>=5.1.0,<6.0.0",
-  "SQLAlchemy>=2.0.0,<3.0.0",
-  "APScheduler>=3.11.0,<4.0.0",
-  "tenacity>=9.0.0,<10.0.0",
-  "jinja2>=3.1.0,<4.0.0",
   "pydantic>=2.12.0,<3.0.0",
   "pydantic-settings>=2.8.0,<3.0.0",
   "python-dotenv>=1.1.0,<2.0.0",

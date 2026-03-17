@@ -6,7 +6,7 @@ from email.message import EmailMessage
 
 import aiosmtplib
 
-from .config import AppSettings
+from ..config import AppSettings
 
 
 class SMTPAdapter:
@@ -16,7 +16,6 @@ class SMTPAdapter:
         self.settings = settings
 
     async def send_message(self, message: EmailMessage, recipients: list[str]) -> None:
-        use_ssl = self.settings.smtp_use_ssl
         await aiosmtplib.send(
             message,
             sender=str(self.settings.mail_from),
@@ -25,7 +24,7 @@ class SMTPAdapter:
             port=self.settings.smtp_port,
             username=self.settings.smtp_username,
             password=self.settings.smtp_password,
-            use_tls=use_ssl,
-            start_tls=(self.settings.smtp_use_starttls if not use_ssl else False),
+            use_tls=True,
+            start_tls=False,
             timeout=30,
         )

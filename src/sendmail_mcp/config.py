@@ -1,4 +1,4 @@
-"""Sendmail MCP 的配置加载模块。"""
+"""应用配置加载。"""
 
 from __future__ import annotations
 
@@ -23,11 +23,18 @@ class AppSettings(BaseSettings):
     mail_from: EmailStr | None = Field(default=None, validation_alias="MAIL_FROM")
 
     smtp_host: str = Field(validation_alias="SMTP_HOST")
-    smtp_port: int = Field(default=587, validation_alias="SMTP_PORT")
+    smtp_port: int = Field(default=465, validation_alias="SMTP_PORT")
     smtp_username: str = Field(validation_alias="SMTP_USERNAME")
     smtp_password: str = Field(validation_alias="SMTP_PASSWORD")
-    smtp_use_ssl: bool | None = Field(default=None, validation_alias="SMTP_USE_SSL")
-    smtp_use_starttls: bool | None = Field(default=None, validation_alias="SMTP_USE_STARTTLS")
+
+    imap_host: str | None = Field(default=None, validation_alias="IMAP_HOST")
+    imap_port: int = Field(default=993, validation_alias="IMAP_PORT")
+    imap_username: str | None = Field(default=None, validation_alias="IMAP_USERNAME")
+    imap_password: str | None = Field(default=None, validation_alias="IMAP_PASSWORD")
+    imap_use_ssl: bool = Field(default=True, validation_alias="IMAP_USE_SSL")
+    imap_folder: str = Field(default="INBOX", validation_alias="IMAP_FOLDER")
+    imap_drafts_folder: str = Field(default="Drafts", validation_alias="IMAP_DRAFTS_FOLDER")
+    imap_sent_folder: str = Field(default="Sent", validation_alias="IMAP_SENT_FOLDER")
 
     allowed_recipient_domains: Annotated[list[str], NoDecode] = Field(
         default_factory=list,
@@ -56,10 +63,17 @@ class AppSettings(BaseSettings):
         default=20,
         validation_alias="MAX_TOTAL_ATTACHMENT_MB",
     )
-
-    database_url: str = Field(
-        default="sqlite:///./data/sendmail.db",
-        validation_alias="DATABASE_URL",
+    allow_remote_attachments: bool = Field(
+        default=False,
+        validation_alias="ALLOW_REMOTE_ATTACHMENTS",
+    )
+    allow_data_uri_attachments: bool = Field(
+        default=True,
+        validation_alias="ALLOW_DATA_URI_ATTACHMENTS",
+    )
+    attachment_download_timeout_sec: int = Field(
+        default=30,
+        validation_alias="ATTACHMENT_DOWNLOAD_TIMEOUT_SEC",
     )
 
     mcp_http_host: str = Field(default="127.0.0.1", validation_alias="MCP_HTTP_HOST")
@@ -82,10 +96,10 @@ class AppSettings(BaseSettings):
     def _normalize_domains(cls, value: list[str]) -> list[str]:
         normalized: list[str] = []
         for domain in value:
-            d = domain.lower().strip()
-            if d.startswith("@"):
-                d = d[1:]
-            normalized.append(d)
+            current = domain.lower().strip()
+            if current.startswith("@"):
+                current = current[1:]
+            normalized.append(current)
         return sorted(set(normalized))
 
     @field_validator("allowed_recipients", mode="after")
@@ -103,35 +117,22 @@ class AppSettings(BaseSettings):
                     "MAIL_FROM 未设置且 SMTP_USERNAME 不是合法邮箱地址，无法自动推断发件人。"
                 ) from exc
 
-        if self.smtp_use_ssl is None and self.smtp_use_starttls is None:
-            if self.smtp_port == 465:
-                self.smtp_use_ssl = True
-                self.smtp_use_starttls = False
-            elif self.smtp_port == 587:
-                self.smtp_use_ssl = False
-                self.smtp_use_starttls = True
-            else:
-                self.smtp_use_ssl = False
-                self.smtp_use_starttls = False
-        elif self.smtp_use_ssl is None:
-            self.smtp_use_ssl = False
-            if self.smtp_use_starttls is None:
-                self.smtp_use_starttls = self.smtp_port == 587
-        elif self.smtp_use_starttls is None:
-            self.smtp_use_starttls = False if self.smtp_use_ssl else (self.smtp_port == 587)
-
-        if not self.allowed_recipient_domains and not self.allowed_recipients:
-            raise ValueError(
-                "At least one of ALLOWED_RECIPIENT_DOMAINS or ALLOWED_RECIPIENTS must be set."
-            )
         if self.max_recipients_per_job < 1:
             raise ValueError("MAX_RECIPIENTS_PER_JOB must be at least 1.")
         if self.rate_limit_emails_per_min < 1:
             raise ValueError("RATE_LIMIT_EMAILS_PER_MIN must be at least 1.")
         if self.max_attachment_mb < 1 or self.max_total_attachment_mb < 1:
             raise ValueError("Attachment size limits must be positive.")
-        if bool(self.smtp_use_ssl) and bool(self.smtp_use_starttls):
-            raise ValueError("SMTP_USE_SSL and SMTP_USE_STARTTLS cannot both be true.")
+        if self.attachment_download_timeout_sec < 1:
+            raise ValueError("ATTACHMENT_DOWNLOAD_TIMEOUT_SEC must be at least 1.")
+        if not self.imap_folder.strip():
+            raise ValueError("IMAP_FOLDER must not be empty.")
+        if not self.imap_drafts_folder.strip():
+            raise ValueError("IMAP_DRAFTS_FOLDER must not be empty.")
+        if not self.imap_sent_folder.strip():
+            raise ValueError("IMAP_SENT_FOLDER must not be empty.")
+        if self.smtp_port != 465:
+            raise ValueError("SMTP_PORT must be 465.")
         return self
 
     @property

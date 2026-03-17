@@ -4,12 +4,11 @@ __pycache__/
 
 .venv/
 .python-version
+.pytest_cache/
 
 build/
 dist/
 *.egg-info/
 
 .env
-
-data/*.db
-data/*.db-*
+sendmail-http*.log
